@@ -161,7 +161,7 @@ class OfferAccessibilityService : AccessibilityService() {
      * screenshot API — no MediaProjection consent, on-device only. One per offer.
      */
     @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
-    private fun captureOfferScreenshot(offerId: String) {
+    private fun captureOfferScreenshot(offerId: String, analyzeMap: Boolean) {
         runCatching {
             takeScreenshot(
                 Display.DEFAULT_DISPLAY,
@@ -173,10 +173,13 @@ class OfferAccessibilityService : AccessibilityService() {
                             val bmp = hw?.copy(Bitmap.Config.ARGB_8888, false)
                             hw?.recycle()
                             result.hardwareBuffer.close()
-                            if (bmp != null) {
-                                val dir = File(filesDir, "offer-screens").apply { mkdirs() }
-                                val file = File(dir, "$offerId-${System.currentTimeMillis()}.jpg")
-                                FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+                            if (bmp == null) return@runCatching
+                            val dir = File(filesDir, "offer-screens").apply { mkdirs() }
+                            val file = File(dir, "$offerId-${System.currentTimeMillis()}.jpg")
+                            FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+                            if (analyzeMap) {
+                                MapReader.analyze(bmp) { r -> announceDestination(r); bmp.recycle() }
+                            } else {
                                 bmp.recycle()
                             }
                         }
@@ -185,6 +188,16 @@ class OfferAccessibilityService : AccessibilityService() {
                     override fun onFailure(errorCode: Int) { /* rate-limited or unsupported */ }
                 },
             )
+        }
+    }
+
+    /** Logs and (if voice is on) speaks the read destination. Silent when unsure. */
+    private fun announceDestination(r: MapReader.Result) {
+        val city = r.city ?: return
+        val far = if (r.far) " · far" else ""
+        EventLog.add(this, "DD destination — $city$far")
+        if (SettingsStore(this).voiceEnabled()) {
+            VoiceSpeaker.speak(this, "Delivering to $city" + if (r.far) ", far" else "")
         }
     }
 
@@ -246,8 +259,11 @@ class OfferAccessibilityService : AccessibilityService() {
         if (!emittedOfferIds.add(id)) return // already logged this offer
         lastDropoff = null // new order → allow its dropoff city/ZIP to log once
 
-        // One screenshot of the offer map per offer, for offline OCR/pin validation.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) captureOfferScreenshot(id)
+        // Screenshot the offer map; read the destination only for single offers
+        // (batch maps have multiple dropoffs — too ambiguous to voice).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            captureOfferScreenshot(id, analyzeMap = parsed.stops == 1 && !parsed.isAddToRoute)
+        }
 
         val settings = SettingsStore(this).load()
         val acceptanceRate = AcceptanceStore(this).rate()
