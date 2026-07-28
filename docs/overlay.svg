@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="560" viewBox="0 0 1040 560" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">
+  <rect width="1040" height="560" rx="24" fill="#1c1c22"/>
+  <text x="520" y="52" text-anchor="middle" fill="#8e8e96" font-size="22" font-weight="700" letter-spacing="0.5">IDeliver — the suggestion overlay</text>
+  <text x="520" y="82" text-anchor="middle" fill="#5f5f68" font-size="15">touch-transparent · floats clear of the Accept / Decline buttons · you tap, never the app</text>
+
+  <!-- ACCEPT card -->
+  <g transform="translate(40,120)">
+    <rect width="300" height="380" rx="20" fill="#101014" stroke="#34C759" stroke-width="2"/>
+    <text x="24" y="52" fill="#34C759" font-size="30" font-weight="800">ACCEPT</text>
+    <text x="24" y="110" fill="#ffffff" font-size="52" font-weight="800">$8.50</text>
+    <text x="24" y="150" fill="#34C759" font-size="24" font-weight="700">~$6.50 tip</text>
+    <text x="24" y="188" fill="#B0B0B8" font-size="19">$19.80 / active hr</text>
+    <text x="24" y="240" fill="#E5E5EA" font-size="38" font-weight="800">3.2 mi · 12 min</text>
+    <text x="24" y="286" fill="#34C759" font-size="22" font-weight="700">$2.66 / mi all-in</text>
+    <text x="24" y="326" fill="#B0B0B8" font-size="17">clears your $/mi and $/hr floors</text>
+    <text x="24" y="358" fill="#8e8e96" font-size="17">→ Pea Ridge</text>
+  </g>
+
+  <!-- MARGINAL card -->
+  <g transform="translate(370,120)">
+    <rect width="300" height="380" rx="20" fill="#101014" stroke="#FFB020" stroke-width="2"/>
+    <text x="24" y="52" fill="#FFB020" font-size="30" font-weight="800">MARGINAL</text>
+    <text x="24" y="110" fill="#ffffff" font-size="52" font-weight="800">$5.25</text>
+    <text x="24" y="150" fill="#34C759" font-size="24" font-weight="700">~$3.25 tip</text>
+    <text x="24" y="188" fill="#B0B0B8" font-size="19">$13.10 / active hr</text>
+    <text x="24" y="240" fill="#E5E5EA" font-size="38" font-weight="800">4.1 mi · 15 min</text>
+    <text x="24" y="286" fill="#FFB020" font-size="22" font-weight="700">$1.28 / mi all-in</text>
+    <text x="24" y="326" fill="#B0B0B8" font-size="17">near your $/mi floor · your call</text>
+    <text x="24" y="358" fill="#8e8e96" font-size="17">→ Bentonville</text>
+  </g>
+
+  <!-- REJECT card -->
+  <g transform="translate(700,120)">
+    <rect width="300" height="380" rx="20" fill="#101014" stroke="#FF453A" stroke-width="2"/>
+    <text x="24" y="52" fill="#FF453A" font-size="30" font-weight="800">REJECT</text>
+    <text x="24" y="110" fill="#ffffff" font-size="52" font-weight="800">$2.50</text>
+    <text x="24" y="150" fill="#B0B0B8" font-size="19">earn by order · no tip showing</text>
+    <text x="24" y="188" fill="#B0B0B8" font-size="19">$7.90 / active hr</text>
+    <text x="24" y="240" fill="#E5E5EA" font-size="38" font-weight="800">6.8 mi · 22 min</text>
+    <text x="24" y="286" fill="#FF453A" font-size="22" font-weight="700">$0.37 / mi all-in</text>
+    <text x="24" y="326" fill="#B0B0B8" font-size="17">below $2.00/mi · long deadhead</text>
+    <text x="24" y="358" fill="#8e8e96" font-size="17">→ Rogers</text>
+  </g>
+
+  <text x="520" y="536" text-anchor="middle" fill="#5f5f68" font-size="14">Mockup with synthetic data. The app displays a recommendation only — it never accepts or declines an offer.</text>
+</svg>

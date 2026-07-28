@@ -8,6 +8,11 @@ offer gives you.
 
 It does **not** interact with the delivery apps for you. It looks; you tap.
 
+![The IDeliver suggestion overlay in its ACCEPT, MARGINAL, and REJECT states](docs/overlay.svg)
+
+> Mockup with synthetic data. The overlay is touch-transparent and floats clear
+> of the Accept / Decline buttons — it shows a recommendation; you make every tap.
+
 ---
 
 ## What it does
