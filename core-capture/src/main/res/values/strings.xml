@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="a11y_service_description">Reads the DoorDash/Uber offer screen (read-only) to recover the pay and distance that the offer notification does not include. It never taps or controls the app.</string>
+</resources>

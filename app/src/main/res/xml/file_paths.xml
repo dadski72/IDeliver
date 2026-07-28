@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Matches DumpStore.DIR under the app's internal filesDir. -->
+    <files-path
+        name="capture-dumps"
+        path="capture-dumps/" />
+</paths>

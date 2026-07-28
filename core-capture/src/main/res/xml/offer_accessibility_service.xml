@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Read-only offer-screen reader. Scoped by android:packageNames to the two driver
+  apps only, so the service never receives events from anything else on the phone.
+  canRetrieveWindowContent is required to read the node tree; no gesture/action
+  capability is requested because this path never touches the screen.
+
+  NOTE: android:isAccessibilityTool is intentionally NOT set true — this is not a
+  general accessibility tool, and Android 17 will restrict this access under
+  Advanced Protection. Treated as enrichment that may disappear.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
+    android:notificationTimeout="200"
+    android:packageNames="com.doordash.driverapp,com.ubercab.driver"
+    android:description="@string/a11y_service_description" />

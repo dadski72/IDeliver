@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws its own surfaces; the activity window just needs a valid
+         no-action-bar theme. Uses the platform theme to avoid an AppCompat dep. -->
+    <style name="Theme.IDeliver" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
