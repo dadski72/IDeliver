@@ -21,9 +21,14 @@ import com.ideliver.model.Verdict
  * offer's guaranteed earnings (by-order total incl. capped tip; by-time = rate ×
  * active minutes, tips excluded and thus a floor).
  *
- * Limits (each skipped when 0): trip miles ≤ radius, trip minutes ≤ max, and the
- * true-cost $/mi and $/hr must clear their minimums. Any breach → DECLINE with a
- * reason; all clear → ACCEPT; no miles and no minutes → INSUFFICIENT_DATA.
+ * Limits (each skipped when 0): trip miles ≤ radius, trip minutes ≤ max. The
+ * quality gate then splits by pay mode:
+ *  - Earn-by-ORDER: the true-cost $/mi and $/hr must clear their minimums.
+ *  - Earn-by-TIME: pay is tip-blind, so instead we gate on the *paid active share*
+ *    of the clock (active ÷ (active + unpaid return)) — a far dropoff whose empty
+ *    return dwarfs the paid leg is what actually erodes a by-time hour.
+ * Any hard breach → DECLINE with a reason; a near-miss → MARGINAL; all clear →
+ * ACCEPT; no miles and no minutes → INSUFFICIENT_DATA.
  */
 object RulesEngine {
 
@@ -71,6 +76,7 @@ object RulesEngine {
         }
 
         // True-cost rates over all legs (delivery + unpaid return).
+        val returnMinutes = (miles ?: 0.0) * deadhead / RETURN_MPH * 60.0
         var perMile: Double? = null
         var perHour: Double? = null
         if (earnedCents != null) {
@@ -79,29 +85,50 @@ object RulesEngine {
                 perMile = earned / (miles * (1.0 + deadhead))
             }
             if (minutes != null && minutes > 0) {
-                val returnMinutes = (miles ?: 0.0) * deadhead / RETURN_MPH * 60.0
                 perHour = earned / ((minutes + returnMinutes) / 60.0)
             }
         }
 
-        // Quality thresholds: a near-miss is MARGINAL, a clear miss is DECLINE.
-        if (settings.minDollarsPerMile > 0 && perMile != null) {
-            when {
-                perMile < settings.minDollarsPerMile * MARGINAL_BAND -> {
-                    reasons.add("$%.2f/mi under $%.2f/mi".format(perMile, settings.minDollarsPerMile)); hardDecline = true
-                }
-                perMile < settings.minDollarsPerMile -> {
-                    reasons.add("$%.2f/mi just under $%.2f/mi".format(perMile, settings.minDollarsPerMile)); marginal = true
+        if (isEarnByTime) {
+            // Earn-by-time pays for ACTIVE time (accept→complete) and hides tips, so
+            // an absolute $/hr or $/mi floor is unfair — the offer's pay is a tip-free
+            // floor. What actually erodes a by-time hour is the UNPAID return from a
+            // far dropoff: the larger the empty return relative to the paid active
+            // time, the more it dilutes your guaranteed rate. Gate on that structural
+            // ratio instead — it holds regardless of the (unknown) tip. Add-to-route
+            // has no return (deadhead 0), so it never trips this.
+            if (minutes != null && minutes > 0 && deadhead > 0 && returnMinutes > 0) {
+                val activeShare = minutes / (minutes + returnMinutes)
+                when {
+                    activeShare < settings.byTimeActiveShareDecline -> {
+                        reasons.add("unpaid return ~%.0f min exceeds the %d min you're paid".format(returnMinutes, minutes)); hardDecline = true
+                    }
+                    activeShare < settings.byTimeActiveShareFloor -> {
+                        reasons.add("long unpaid return ~%.0f min dilutes your hourly".format(returnMinutes)); marginal = true
+                    }
                 }
             }
-        }
-        if (settings.minDollarsPerHour > 0 && perHour != null) {
-            when {
-                perHour < settings.minDollarsPerHour * MARGINAL_BAND -> {
-                    reasons.add("$%.0f/hr under $%.0f/hr".format(perHour, settings.minDollarsPerHour)); hardDecline = true
+        } else {
+            // Earn-by-order: the total (incl. capped tip) is known, so gate on the
+            // true-cost dollar floors. A near-miss is MARGINAL, a clear miss DECLINE.
+            if (settings.minDollarsPerMile > 0 && perMile != null) {
+                when {
+                    perMile < settings.minDollarsPerMile * MARGINAL_BAND -> {
+                        reasons.add("$%.2f/mi under $%.2f/mi".format(perMile, settings.minDollarsPerMile)); hardDecline = true
+                    }
+                    perMile < settings.minDollarsPerMile -> {
+                        reasons.add("$%.2f/mi just under $%.2f/mi".format(perMile, settings.minDollarsPerMile)); marginal = true
+                    }
                 }
-                perHour < settings.minDollarsPerHour -> {
-                    reasons.add("$%.0f/hr just under $%.0f/hr".format(perHour, settings.minDollarsPerHour)); marginal = true
+            }
+            if (settings.minDollarsPerHour > 0 && perHour != null) {
+                when {
+                    perHour < settings.minDollarsPerHour * MARGINAL_BAND -> {
+                        reasons.add("$%.0f/hr under $%.0f/hr".format(perHour, settings.minDollarsPerHour)); hardDecline = true
+                    }
+                    perHour < settings.minDollarsPerHour -> {
+                        reasons.add("$%.0f/hr just under $%.0f/hr".format(perHour, settings.minDollarsPerHour)); marginal = true
+                    }
                 }
             }
         }

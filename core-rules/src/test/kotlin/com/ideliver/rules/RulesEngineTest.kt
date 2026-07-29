@@ -98,6 +98,52 @@ class RulesEngineTest {
     }
 
     @Test
+    fun `earn-by-time far dropoff with long unpaid return is marginal`() {
+        // Torchy's, 2026-07-29: 15.3 mi, 26 min active. Return ≈ 15.3/30*60 = 30.6 min,
+        // active share 26/56.6 = 0.46 → between decline (0.45) and floor (0.60) → MARGINAL.
+        val v = RulesEngine.evaluate(
+            offer(553, 15.3, 26),
+            RuleSettings(),
+            isEarnByTime = true,
+        )
+        assertEquals(Decision.MARGINAL, v.decision)
+    }
+
+    @Test
+    fun `earn-by-time nearby dropoff stays accept`() {
+        // Dunkin', 2026-07-29: 4.9 mi, 16 min. Return ≈ 9.8 min, active share 0.62 → ACCEPT.
+        val v = RulesEngine.evaluate(
+            offer(340, 4.9, 16),
+            RuleSettings(),
+            isEarnByTime = true,
+        )
+        assertEquals(Decision.ACCEPT, v.decision)
+    }
+
+    @Test
+    fun `earn-by-time extreme deadhead declines`() {
+        // A 20-mi single drop, 20 min active. Return ≈ 40 min, active share 0.33 → DECLINE.
+        val v = RulesEngine.evaluate(
+            offer(425, 20.0, 20),
+            RuleSettings(),
+            isEarnByTime = true,
+        )
+        assertEquals(Decision.DECLINE, v.decision)
+    }
+
+    @Test
+    fun `earn-by-time add-to-route has no return and stays accept`() {
+        // Taco Bell, 2026-07-29: add-to-route, 1.6 mi. No empty return → never trips the gate.
+        val v = RulesEngine.evaluate(
+            offer(744, 1.6, 35),
+            RuleSettings(),
+            isEarnByTime = true,
+            isAddToRoute = true,
+        )
+        assertEquals(Decision.ACCEPT, v.decision)
+    }
+
+    @Test
     fun `clear miss on dollars per mile declines`() {
         // $2 → $0.20/mi over 10 driven, well under 85% of $0.65.
         val v = RulesEngine.evaluate(

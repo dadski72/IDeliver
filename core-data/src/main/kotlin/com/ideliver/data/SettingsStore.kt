@@ -19,8 +19,11 @@ class SettingsStore(context: Context) {
         baseFloorCents = prefs.getInt(KEY_BASE_FLOOR_CENTS, 200),
         basePerMileCents = prefs.getInt(KEY_BASE_PERMILE_CENTS, 15),
         deadheadFactor = prefs.getFloat(KEY_DEADHEAD, 1.0f).toDouble(),
-        minDollarsPerHour = prefs.getFloat(KEY_MIN_PER_HOUR, 0f).toDouble(),
-        minDollarsPerMile = prefs.getFloat(KEY_MIN_PER_MILE, 0f).toDouble(),
+        // Default true-cost floors for earn-by-ORDER offers (0 = off). Tuned modestly
+        // for a low running-cost vehicle; editable in Settings. Earn-by-time is gated
+        // structurally (active share), not by these dollar floors.
+        minDollarsPerHour = prefs.getFloat(KEY_MIN_PER_HOUR, 14.0f).toDouble(),
+        minDollarsPerMile = prefs.getFloat(KEY_MIN_PER_MILE, 1.25f).toDouble(),
         platinumTargetPercent = prefs.getInt(KEY_PLATINUM_TARGET, 70),
         byTimeHourlyCents = prefs.getInt(KEY_BYTIME_HOURLY, 1300),
     )

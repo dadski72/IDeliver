@@ -36,6 +36,14 @@ data class RuleSettings(
     // Your market's Earn-by-Time guaranteed rate, for the post-dash mode advisor
     // (compares your actual base pay/active-hr against this).
     val byTimeHourlyCents: Int = 1300,
+    // Earn-by-time quality gate. By-time pays for ACTIVE time and hides tips, so a
+    // dollar floor is unfair — what erodes a by-time hour is the UNPAID return from
+    // a far dropoff. These are the fraction of the clock that must be *paid* active
+    // time (active ÷ (active + return)): below the floor is MARGINAL, below the
+    // decline line is DECLINE. 0.60/0.45 ≈ flag when the empty return runs to two
+    // thirds of, or longer than, the paid leg.
+    val byTimeActiveShareFloor: Double = 0.60,
+    val byTimeActiveShareDecline: Double = 0.45,
 ) {
     val radiusIsLimited: Boolean get() = radiusMiles > 0.0
     val timeIsLimited: Boolean get() = maxMinutes > 0
