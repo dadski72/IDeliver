@@ -161,7 +161,7 @@ class OfferAccessibilityService : AccessibilityService() {
      * screenshot API — no MediaProjection consent, on-device only. One per offer.
      */
     @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
-    private fun captureOfferScreenshot(offerId: String, analyzeMap: Boolean) {
+    private fun captureOfferScreenshot(offerId: String, store: String?, analyzeMap: Boolean) {
         runCatching {
             takeScreenshot(
                 Display.DEFAULT_DISPLAY,
@@ -178,7 +178,7 @@ class OfferAccessibilityService : AccessibilityService() {
                             val file = File(dir, "$offerId-${System.currentTimeMillis()}.jpg")
                             FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
                             if (analyzeMap) {
-                                MapReader.analyze(bmp) { r -> announceDestination(r); bmp.recycle() }
+                                MapReader.analyze(bmp) { r -> announceDestination(r, store); bmp.recycle() }
                             } else {
                                 bmp.recycle()
                             }
@@ -192,10 +192,13 @@ class OfferAccessibilityService : AccessibilityService() {
     }
 
     /** Logs and (if voice is on) speaks the read destination. Silent when unsure. */
-    private fun announceDestination(r: MapReader.Result) {
+    private fun announceDestination(r: MapReader.Result, store: String?) {
         val city = r.city ?: return
         val far = if (r.far) " · far" else ""
-        EventLog.add(this, "DD destination — $city$far")
+        // Tie the destination to its store so the log line stands on its own — it
+        // lands a beat after the offer line (screenshot + OCR are async).
+        val from = store?.takeIf { it.isNotBlank() }?.let { "$it → " } ?: ""
+        EventLog.add(this, "DD destination — $from$city$far")
         if (SettingsStore(this).voiceEnabled()) {
             VoiceSpeaker.speak(this, "Delivering to $city" + if (r.far) ", far" else "")
         }
@@ -262,7 +265,7 @@ class OfferAccessibilityService : AccessibilityService() {
         // Screenshot the offer map; read the destination only for single offers
         // (batch maps have multiple dropoffs — too ambiguous to voice).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            captureOfferScreenshot(id, analyzeMap = parsed.stops == 1 && !parsed.isAddToRoute)
+            captureOfferScreenshot(id, parsed.store, analyzeMap = parsed.stops == 1 && !parsed.isAddToRoute)
         }
 
         val settings = SettingsStore(this).load()
