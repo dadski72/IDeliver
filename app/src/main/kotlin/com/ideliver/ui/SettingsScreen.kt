@@ -268,21 +268,32 @@ private fun VoiceCard() {
     val store = remember { SettingsStore(context) }
     var enabled by remember { mutableStateOf(store.voiceEnabled()) }
     Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Voice announcements", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "Speaks each offer's miles, minutes, and accept/reject — hands-free.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Voice announcements", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = "Speaks each offer's miles, minutes, and accept/reject — hands-free.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { enabled = it; store.setVoiceEnabled(it) },
                 )
             }
-            Switch(
-                checked = enabled,
-                onCheckedChange = { enabled = it; store.setVoiceEnabled(it) },
+            OutlinedButton(
+                onClick = { com.ideliver.capture.VoiceSpeaker.test(context) },
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            ) {
+                Text("Test voice")
+            }
+            Text(
+                text = "Tip: voice plays on the media stream — turn media volume up. If the button is silent, the en-US voice may need downloading (Settings → Text-to-speech).",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
