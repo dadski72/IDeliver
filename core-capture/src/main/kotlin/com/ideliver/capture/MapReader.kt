@@ -115,11 +115,18 @@ object MapReader {
         for (block in text.textBlocks) {
             for (line in block.lines) {
                 val bb = line.boundingBox ?: continue
-                if (bb.centerY() > mapH) continue
+                // Only labels inside the map: skip the offer panel below it and the
+                // status bar band on top (that's where "42.0 KB/S", "5G", clock live).
+                if (bb.centerY() > mapH || bb.centerY() < mapH * 0.10) continue
                 val t = line.text.trim()
-                if (t.length < 3 || t.length > 22) continue
-                if (t.any { it.isDigit() } || !t.any { it.isLetter() }) continue
-                if (t.lowercase().split(" ", "/").any { it in NOISE }) continue
+                // A place name is a Title-case word of a few letters. Reject anything
+                // with digits or a slash ("KB/S", "GB/s"), any all-caps acronym
+                // ("5G", "UW", "LTE") by requiring a lowercase letter, and 3-char
+                // OCR fragments (a chopped "Bella Vista" → "Vis").
+                if (t.length < 4 || t.length > 22) continue
+                if (t.any { it.isDigit() } || '/' in t) continue
+                if (t.none { it.isLetter() } || t.none { it.isLowerCase() }) continue
+                if (t.lowercase().split(" ", "/", ",").any { it in NOISE }) continue
                 val d = hypot((bb.exactCenterX() - dx).toDouble(), (bb.exactCenterY() - dy).toDouble())
                 if (d < bestD) { bestD = d; best = t }
             }

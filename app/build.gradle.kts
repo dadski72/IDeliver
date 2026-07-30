@@ -14,8 +14,8 @@ android {
         applicationId = "com.ideliver"
         minSdk = 29
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.4.2"
+        versionCode = 9
+        versionName = "1.4.4"
     }
 
     buildTypes {
