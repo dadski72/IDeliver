@@ -132,6 +132,32 @@ class RulesEngineTest {
     }
 
     @Test
+    fun `earn-by-time batch shares the return across stops and accepts`() {
+        // Golden Corral + Handel's, 2026-07-29: 14.1 mi, 38 min, 2 stops. The empty
+        // return is from the last of 2 dropoffs (~7 mi ≈ 14 min), active share 0.73 →
+        // ACCEPT. The counter-check confirmed the near-identical Chipotle/Sweetgreen
+        // batch paid ~$13/hr all-in, so this should not be penalized.
+        val v = RulesEngine.evaluate(
+            offer(808, 14.1, 38, stops = 2),
+            RuleSettings(),
+            isEarnByTime = true,
+        )
+        assertEquals(Decision.ACCEPT, v.decision)
+    }
+
+    @Test
+    fun `earn-by-time same trip as a single (full return) would be marginal`() {
+        // Same 14.1 mi / 38 min, but as one dropoff: full ~28 min return, share 0.58 →
+        // MARGINAL. Contrast with the batch above — the stop count is what differs.
+        val v = RulesEngine.evaluate(
+            offer(808, 14.1, 38, stops = 1),
+            RuleSettings(),
+            isEarnByTime = true,
+        )
+        assertEquals(Decision.MARGINAL, v.decision)
+    }
+
+    @Test
     fun `earn-by-time add-to-route has no return and stays accept`() {
         // Taco Bell, 2026-07-29: add-to-route, 1.6 mi. No empty return → never trips the gate.
         val v = RulesEngine.evaluate(

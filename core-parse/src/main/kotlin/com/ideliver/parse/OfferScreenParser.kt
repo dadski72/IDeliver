@@ -63,7 +63,9 @@ object OfferScreenParser {
                 miles = it.groupValues[1].toDoubleOrNull()
                 minutes = it.groupValues[2].toIntOrNull()
             }
-            if (t == "Pickup" && i + 1 < texts.size) store = texts[i + 1]
+            // First "Pickup" only — a batch lists several, and the notification
+            // names the first, so first keeps the two capture paths consistent.
+            if (t == "Pickup" && store == null && i + 1 < texts.size) store = texts[i + 1]
         }
 
         if (mode == null && payCents != null) mode = EarnMode.ORDER

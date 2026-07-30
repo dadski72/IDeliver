@@ -55,6 +55,10 @@ object RulesEngine {
         val stops = (offer.stops ?: 1).coerceAtLeast(1)
         // Add-to-route is incremental — you continue your route, no empty return.
         val deadhead = if (isAddToRoute) 0.0 else settings.deadheadFactor
+        // On a batch, [miles] is the whole multi-stop route, but you only deadhead
+        // home from the *last* of N dropoffs spread along it — so the empty return
+        // scales down with the stop count, not the full route. (Single: unchanged.)
+        val returnFactor = deadhead / stops
         val reasons = mutableListOf<String>()
         var hardDecline = false
         var marginal = false
@@ -76,13 +80,13 @@ object RulesEngine {
         }
 
         // True-cost rates over all legs (delivery + unpaid return).
-        val returnMinutes = (miles ?: 0.0) * deadhead / RETURN_MPH * 60.0
+        val returnMinutes = (miles ?: 0.0) * returnFactor / RETURN_MPH * 60.0
         var perMile: Double? = null
         var perHour: Double? = null
         if (earnedCents != null) {
             val earned = earnedCents / 100.0
             if (miles != null && miles > 0) {
-                perMile = earned / (miles * (1.0 + deadhead))
+                perMile = earned / (miles * (1.0 + returnFactor))
             }
             if (minutes != null && minutes > 0) {
                 perHour = earned / ((minutes + returnMinutes) / 60.0)
@@ -96,8 +100,8 @@ object RulesEngine {
             // far dropoff: the larger the empty return relative to the paid active
             // time, the more it dilutes your guaranteed rate. Gate on that structural
             // ratio instead — it holds regardless of the (unknown) tip. Add-to-route
-            // has no return (deadhead 0), so it never trips this.
-            if (minutes != null && minutes > 0 && deadhead > 0 && returnMinutes > 0) {
+            // has no return, and a batch's return is shared across stops (returnFactor).
+            if (minutes != null && minutes > 0 && returnFactor > 0 && returnMinutes > 0) {
                 val activeShare = minutes / (minutes + returnMinutes)
                 when {
                     activeShare < settings.byTimeActiveShareDecline -> {
