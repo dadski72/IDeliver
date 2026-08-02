@@ -60,7 +60,6 @@ class NotificationCaptureService : NotificationListenerService() {
                 dashActive = true
                 DashState.totalCents = null // fresh dash, running total starts over
                 EventLog.add(this, "${platformLabel(sbn)} dash started")
-                MileagePrompt.promptFor(this, com.ideliver.data.MileageKind.START)
             }
         }
 
@@ -107,7 +106,6 @@ class NotificationCaptureService : NotificationListenerService() {
                         .orEmpty()
                     EventLog.add(this, "$label dash ended$total")
                     DashState.totalCents = null
-                    MileagePrompt.promptFor(this, com.ideliver.data.MileageKind.END)
                 }
             }, DASH_END_DEBOUNCE_MS)
         }
