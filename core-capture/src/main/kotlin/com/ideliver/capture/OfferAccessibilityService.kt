@@ -161,7 +161,7 @@ class OfferAccessibilityService : AccessibilityService() {
      * screenshot API — no MediaProjection consent, on-device only. One per offer.
      */
     @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
-    private fun captureOfferScreenshot(offerId: String, store: String?, analyzeMap: Boolean) {
+    private fun captureOfferScreenshot(offerId: String, store: String?, analyzeMap: Boolean, isBatch: Boolean) {
         runCatching {
             takeScreenshot(
                 Display.DEFAULT_DISPLAY,
@@ -178,7 +178,7 @@ class OfferAccessibilityService : AccessibilityService() {
                             val file = File(dir, "$offerId-${System.currentTimeMillis()}.jpg")
                             FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
                             if (analyzeMap) {
-                                MapReader.analyze(bmp) { r -> announceDestination(r, store); bmp.recycle() }
+                                MapReader.analyze(bmp) { r -> announceDestination(r, store, isBatch); bmp.recycle() }
                             } else {
                                 bmp.recycle()
                             }
@@ -192,15 +192,19 @@ class OfferAccessibilityService : AccessibilityService() {
     }
 
     /** Logs and (if voice is on) speaks the read destination. Silent when unsure. */
-    private fun announceDestination(r: MapReader.Result, store: String?) {
+    private fun announceDestination(r: MapReader.Result, store: String?, isBatch: Boolean) {
         val city = r.city ?: return
         val far = if (r.far) " · far" else ""
         // Tie the destination to its store so the log line stands on its own — it
-        // lands a beat after the offer line (screenshot + OCR are async).
+        // lands a beat after the offer line (screenshot + OCR are async). On a batch
+        // this is the farthest of several stops, so label it honestly rather than
+        // implying it's the only dropoff.
         val from = store?.takeIf { it.isNotBlank() }?.let { "$it → " } ?: ""
-        EventLog.add(this, "DD destination — $from$city$far")
+        val kind = if (isBatch) "farthest stop" else "destination"
+        EventLog.add(this, "DD $kind — $from$city$far")
         if (SettingsStore(this).voiceEnabled()) {
-            VoiceSpeaker.speak(this, "Delivering to $city" + if (r.far) ", far" else "")
+            val lead = if (isBatch) "Farthest stop, $city" else "Delivering to $city"
+            VoiceSpeaker.speak(this, lead + if (r.far) ", far" else "")
         }
     }
 
@@ -262,10 +266,13 @@ class OfferAccessibilityService : AccessibilityService() {
         if (!emittedOfferIds.add(id)) return // already logged this offer
         lastDropoff = null // new order → allow its dropoff city/ZIP to log once
 
-        // Screenshot the offer map; read the destination only for single offers
-        // (batch maps have multiple dropoffs — too ambiguous to voice).
+        // Screenshot the offer map and read the destination. On a batch/add-to-route
+        // the map has several dropoff pins, so MapReader's "farthest pin from the
+        // driver" resolves to the farthest stop — logged/spoken as such rather than
+        // as the sole dropoff.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            captureOfferScreenshot(id, parsed.store, analyzeMap = parsed.stops == 1 && !parsed.isAddToRoute)
+            val isBatch = parsed.stops > 1 || parsed.isAddToRoute
+            captureOfferScreenshot(id, parsed.store, analyzeMap = true, isBatch = isBatch)
         }
 
         val settings = SettingsStore(this).load()
